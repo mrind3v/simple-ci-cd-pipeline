@@ -2171,6 +2171,18 @@ Repository → **Actions** tab → run **#1 "add CI pipeline"**.
 
 ![GitHub Actions successful run](2.png)
 
+### 3. Artifact: `calculator-build`
+
+Run summary → **Artifacts** section. The `build` job uploaded `build/` (`calculator.py` and `build-info.txt`) with `actions/upload-artifact`. It can be downloaded from here.
+
+![calculator-build artifact](3.png)
+
+### 4. CI pipeline passing again after the Dockerfile + CD commit
+
+Run **#2 "add Dockerfile and CD pipeline"** (commit `4d549cc`): `Test Application` (8s) → `Build Application` (7s), status Success.
+
+![CI run #2](4.png)
+
 ---
 
 ## CD Pipeline: Docker Image
