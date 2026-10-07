@@ -2142,69 +2142,51 @@ That gives Session 16 a clean progression from "What is CI/CD?" -> "What is GitH
 
 ## Screenshots of Successful Pipeline Execution
 
-### 1. Project structure
-
-```bash
-find . -not -path './.git/*' -not -path './.venv/*' -not -path './.pytest_cache/*'
-```
-
-![Project structure](01-project-structure.png)
-
-### 2. Run tests locally
+### 1. Local commands: test, build, commit and push
 
 ```bash
 source .venv/bin/activate
 pytest -v
-```
-
-![Local tests](02-local-tests.png)
-
-### 3. Run the build script locally
-
-```bash
 chmod +x build.sh
 ./build.sh
-cat build/build-info.txt
-```
-
-![Local build](03-local-build.png)
-
-### 4. Push code to GitHub (triggers the pipeline)
-
-```bash
 git add .
-git commit -m "Add CI pipeline"
+git commit -m "add CI pipeline"
 git push origin main
 ```
 
-![Git push](04-git-push.png)
+- `pytest -v` runs the 5 calculator tests, and all 5 pass.
+- `./build.sh` copies the app into `build/` and finishes with "Build completed successfully."
+- `git push origin main` sends commit `a1560ca` to GitHub, which triggers the workflow.
 
-### 5. GitHub Actions: workflow run list
+![Local test, build and push](1.png)
 
-Repository → **Actions** tab → green tick next to "Python CI Pipeline".
+### 2. GitHub Actions: successful pipeline run
 
-![Workflow runs](05-actions-runs.png)
+Repository → **Actions** tab → run **#1 "add CI pipeline"**.
 
-### 6. Pipeline graph (test → build)
+- Triggered by a `push` to `main` (commit `a1560ca`).
+- Status is **Success**, total duration 26s.
+- The `Test Application` job (8s) passes first, then `Build Application` (9s) runs because of `needs: test`.
+- **Artifacts: 1** is the `calculator-build` upload from the build job.
 
-Open the run to see the `Test Application` job and the `Build Application` job (which `needs: test`).
+![GitHub Actions successful run](2.png)
 
-![Pipeline graph](06-pipeline-graph.png)
+---
 
-### 7. Test job logs
+## CD Pipeline: Docker Image
 
-Expand the **Run tests** step in the `Test Application` job.
+`Dockerfile` packages the calculator app into a `python:3.12-slim` image.
+`.github/workflows/cd.yml` is the CD workflow:
 
-![Test job logs](07-test-job-logs.png)
+1. It starts automatically when `Python CI Pipeline` finishes successfully on `main` (`workflow_run`). It can also be started manually (`workflow_dispatch`).
+2. It builds the Docker image.
+3. It smoke-tests the container with `10 + 5`.
+4. It logs in to GitHub Container Registry with the built-in `secrets.GITHUB_TOKEN` and pushes `ghcr.io/<owner>/<repo>:latest`.
 
-### 8. Build job logs
+CI proves the code is good (test + build + artifact). CD delivers it (a published, runnable image).
 
-Expand **Build application** and **Show build output** in the `Build Application` job.
+Run the published image:
 
-![Build job logs](08-build-job-logs.png)
-
-### 9. Artifact
-
-Scroll to the **Artifacts** section at the bottom of the run summary and show `calculator-build`.
-
-![Artifact](09-artifact.png)
+```bash
+docker run -it --rm ghcr.io/mrind3v/simple-ci-cd-pipeline:latest
+```
